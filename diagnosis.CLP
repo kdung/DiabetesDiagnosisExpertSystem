@@ -14,19 +14,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; load current diagnosis fact ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (deffacts load_facts
-  (current_fact (fact healthy) (cf 0))
-  (current_fact (fact at-risk) (cf 0))
-  (current_fact (fact diabetes-type-I) (cf 0))
-  (current_fact (fact diabetes-type-II) (cf 0))
-  (current_fact (fact gestational-diabetes) (cf 0))
-  (current_fact (fact more-consideration) (cf 0))
+  (current_fact (fact healthy) (cf 0.0))
+  (current_fact (fact at-risk) (cf 0.0))
+  (current_fact (fact diabetes-type-I) (cf 0.0))
+  (current_fact (fact diabetes-type-II) (cf 0.0))
+  (current_fact (fact gestational-diabetes) (cf 0.0))
+  (current_fact (fact more-consideration) (cf 0.0))
 
-  (current_goal (goal healthy) (cf 0))
-  (current_goal (goal at-risk) (cf 0))
-  (current_goal (goal diabetes-type-I) (cf 0))
-  (current_goal (goal diabetes-type-II) (cf 0))
-  (current_goal (goal gestational-diabetes) (cf 0))
-  (current_goal (goal more-consideration) (cf 0))
+  (current_goal (goal healthy) (cf 0.0))
+  (current_goal (goal at-risk) (cf 0.0))
+  (current_goal (goal diabetes-type-I) (cf 0.0))
+  (current_goal (goal diabetes-type-II) (cf 0.0))
+  (current_goal (goal gestational-diabetes) (cf 0.0))
+  (current_goal (goal more-consideration) (cf 0.0))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -131,14 +131,12 @@
   (declare (salience 10))
   (info-gender female)
   (not (info-pregnant ?))
-  (current_fact (fact at-risk) (cf ?cf-risk))
   (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
   =>
   (printout t crlf "Are you pregnant (yes/no)? ")
 	(bind ?response (read))
   (switch ?response
 		(case yes then
-				(assert (working_goal (goal at-risk) (cf (+ ?cf-risk 0.3))))
 				(assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.3))))
         (assert (info-pregnant yes))
     )
@@ -179,11 +177,9 @@
 ;;;******************************************************************************************
 
 (defrule collect-ogtt-pregnant
-    (declare (salience 9))
     (not (test-ogtt ?))
     (info-pregnant yes)
     (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
-    (current_fact (fact healthy) (cf ?cf-healthy))
     =>
     (printout t crlf "How much is your blood glucose level (mmol/L) shown in 2-hours post Oral Glucose Tolerance test (OGTT) ? ")
     (bind ?response (read))
@@ -192,13 +188,11 @@
           (if (> (float ?response) 7.7)
             then
             (assert (test-ogtt unhealthy))
-            (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.7))))
-            (assert (working_goal (goal healthy) (cf (* ?cf-healthy 0.1))))
+            (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.9))))
             (printout t crlf "gestational")
             else
             (assert (test-ogtt healthy))
-            (assert (working_goal (goal gestational-diabetes) (cf (- ?cf-gestational 0.7))))
-            (assert (working_goal (goal healthy) (cf (+ ?cf-healthy 0.6))))
+            (assert (working_goal (goal gestational-diabetes) (cf (* ?cf-gestational 0.0))))
             (printout t crlf "gestational healthy")
           )
         else (assert (test-ogtt not-available))
@@ -207,7 +201,6 @@
 )
 
 (defrule collect-ogtt-non-pregnant
-    (declare (salience 9))
     (not (test-ogtt ?))
     (info-pregnant no)
     (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
@@ -222,10 +215,9 @@
             else
             (assert (test-ogtt unhealthy))
             (if (< ?*age* 20) then
-              (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
-              (printout t "diabetes 1 +0.4")
+              (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.7))))
               else
-              (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.4))))
+              (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.7))))
             )
           )
         else (assert (test-ogtt not-available))
@@ -233,7 +225,6 @@
 )
 
 (defrule collect-fpg
-    (declare (salience 8))
     (not (test-fpg ?))
     (info-pregnant no)
     (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
@@ -248,10 +239,9 @@
             else
             (assert (test-fpg unhealthy))
             (if (< ?*age* 20) then
-              (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
-              (printout t "diabetes 1 +0.4")
+              (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.7))))
               else
-              (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.4))))
+              (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.7))))
             )
           )
         else (assert (test-fpg not-available))
@@ -259,7 +249,6 @@
 )
 
 (defrule collect-cpg
-    (declare (salience 7))
     (not (test-cpg ?))
     (info-pregnant no)
     (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
@@ -275,7 +264,6 @@
             (assert (test-cpg unhealthy))
             (if (< ?*age* 20) then
               (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
-              (printout t "diabetes 1 +0.4")
               else
               (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.4))))
             )
