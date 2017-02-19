@@ -186,10 +186,10 @@
     (current_fact (fact healthy) (cf ?cf-healthy))
     =>
     (printout t crlf "How much is your blood glucose level (mmol/L) shown in 2-hours post Oral Glucose Tolerance test (OGTT) ? ")
-    (bind ?response (float (read)))
+    (bind ?response (read))
     (if (numberp ?response)
         then
-          (if (> ?response 7.7)
+          (if (> (float ?response) 7.7)
             then
             (assert (test-ogtt unhealthy))
             (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.7))))
@@ -214,10 +214,10 @@
     (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
     =>
     (printout t crlf "How much is your blood glucose level (mmol/L) shown in 2-hours post Oral Glucose Tolerance test (OGTT) ? ")
-    (bind ?response (float (read)))
+    (bind ?response (read))
     (if (numberp ?response)
         then
-          (if (< ?response 11.1)
+          (if (< (float ?response) 11.1)
             then (assert (test-ogtt healthy))
             else
             (assert (test-ogtt unhealthy))
@@ -240,10 +240,10 @@
     (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
     =>
     (printout t crlf "How much is your blood glucose level (mmol/L) shown in Fasting Plasma Glucose test (FPG) ? ")
-    (bind ?response (float (read)))
+    (bind ?response (read))
     (if (numberp ?response)
         then
-          (if (< ?response 7.0)
+          (if (< (float ?response) 7.0)
             then (assert (test-fpg healthy))
             else
             (assert (test-fpg unhealthy))
@@ -266,10 +266,10 @@
     (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
     =>
     (printout t crlf "How much is your blood glucose level (mmol/L) shown in Casual Plasma Glucose test (CPG) ? ")
-    (bind ?response (float (read)))
+    (bind ?response (read))
     (if (numberp ?response)
         then
-          (if (< ?response 11.1)
+          (if (< (float ?response) 11.1)
             then (assert (test-cpg healthy))
             else
             (assert (test-cpg unhealthy))
