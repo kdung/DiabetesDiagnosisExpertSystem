@@ -234,9 +234,7 @@
     (bind ?response (read))
     (if (numberp ?response)
         then
-          (if (< (float ?response) 7.0)
-            then (assert (test-fpg healthy))
-            else
+          (if (> (float ?response) 7.0) then
             (assert (test-fpg unhealthy))
             (if (< ?*age* 20) then
               (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.7))))
@@ -244,6 +242,15 @@
               (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.7))))
             )
           )
+          (if (and (>= (float ?response) 6.1) (<= (float ?response) 6.9)) then
+            (assert (test-fpg at-risk))
+            (if (< ?*age* 20) then
+              (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.25))))
+              else
+              (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.25))))
+            )
+          )
+          (if (< (float ?response) 6.1) then (assert (test-fpg healthy)))
         else (assert (test-fpg not-available))
     )
 )
@@ -271,6 +278,206 @@
         else (assert (test-cpg not-available))
     )
 )
+
+;;;******************************************************************************************
+;;;* QUERY RISK FACTORS *
+;;;******************************************************************************************
+(defrule collect-obesity
+    (not (factor-obesity ?))
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "How much is your Body Mass Index (BMI) ? ")
+    (bind ?response (read))
+    (if (numberp ?response) then
+      (if (>= (float ?response) 30) then
+        (assert (factor-obesity obesity))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.2))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.2))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.2))))
+      )
+      (if (and (>= (float ?response) 25) (<= (float ?response) 29.9)) then
+        (assert (factor-obesity overweight))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.1))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.1))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.1))))
+      )
+      (if (< (float ?response) 25) then (assert (factor-obesity normal)))
+      else (assert (factor-obesity not-available))
+    )
+)
+
+(defrule collect-blood-pressure
+    (not (factor-bp ?))
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you have high blood pressure (>= 140/90 Mm Hg) (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (assert (factor-bp high))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+      )
+      (case no then (assert (factor-bp normal)))
+      (default (assert (factor-bp not-available)))
+    )
+)
+
+(defrule collect-family-history
+    (not (factor-history ?))
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you have any family member has history of diabetes (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (assert (factor-history yes))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+      )
+      (case no then (assert (factor-history no)))
+      (default (assert (factor-history not-available)))
+    )
+)
+
+(defrule collect-triglycerides
+    (not (factor-tg ?))
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "How much is your triglyceride (body fat) in milligrams per deciliter ? ")
+    (bind ?response (read))
+    (if (numberp ?response) then
+      (if (>= (float ?response) 200) then
+        (assert (factor-tg high))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.15))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.15))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.15))))
+      )
+      (if (and (>= (float ?response) 150) (<= (float ?response) 199)) then
+        (assert (factor-tg borderline))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.1))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.1))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.1))))
+      )
+      (if (< (float ?response) 150) then (assert (factor-tg normal)))
+      else (assert (factor-tg not-available))
+    )
+)
+
+(defrule collect-gestational-history
+    (not (factor-gestational-history ?))
+    (info-gender female)
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you have history of gestational diabetes or having baby with over 4kg (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (assert (factor-gestational-history yes))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.15))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.15))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.2))))
+      )
+      (case no then (assert (factor-gestational-history no)))
+      (default (assert (factor-gestational-history not-available)))
+    )
+)
+
+(defrule collect-activity
+    (not (factor-activity ?))
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you excercise (do physical activity) at least 3 times per week (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case no then
+        (assert (factor-activity yes))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.02))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.02))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.02))))
+      )
+      (case yes then (assert (factor-activity no)))
+      (default (assert (factor-activity not-available)))
+    )
+)
+
+(defrule collect-glucose-tolerance
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you have impaired Glucose Tolerance in previous tests (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.02))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.02))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.02))))
+      )
+    )
+)
+
+(defrule collect-pos
+    (info-gender female)
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you have Polycystic Ovarian Syndrome (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.02))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.02))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.02))))
+      )
+    )
+)
+
 
 
 ;;;******************************************************************************************
