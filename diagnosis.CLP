@@ -106,7 +106,8 @@
 	(printout t "triggering the next question" crlf)
 )
 
-(defglobal ?*age* = 0)
+(defglobal ?*age* = 0
+    ?*pregnant* = 0)
 
 ;;;******************************************************************************************
 ;;;* QUERY INFO *
@@ -135,13 +136,16 @@
   =>
   (printout t crlf "Are you pregnant (yes/no)? ")
 	(bind ?response (read))
+
   (switch ?response
 		(case yes then
 				(assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.3))))
         (assert (info-pregnant yes))
+        (bind ?*pregnant* 1)
     )
 		(case no then
         (assert (info-pregnant no))
+        (bind ?*pregnant* 0)
     )
     (default (assert (info-pregnant no)))
 	)
@@ -158,14 +162,12 @@
   (bind ?*age* ?response)
   (if (and (>= ?response 20) (< ?response 40))
       then
-      (assert (info-age-20 yes))
-      (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.003))))
+      (assert (info-age yes))
       (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.004))))
   )
   (if (>= ?response 40)
       then
       (assert (info-age yes))
-      (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.009))))
       (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.01))))
       else
       (assert (info-age no))
@@ -189,11 +191,9 @@
             then
             (assert (test-ogtt unhealthy))
             (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.9))))
-            (printout t crlf "gestational")
             else
             (assert (test-ogtt healthy))
             (assert (working_goal (goal gestational-diabetes) (cf (* ?cf-gestational 0.0))))
-            (printout t crlf "gestational healthy")
           )
         else (assert (test-ogtt not-available))
         (printout t crlf "not a")
@@ -366,19 +366,11 @@
     (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
     (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
     =>
-    (printout t crlf "How much is your triglyceride (body fat) in milligrams per deciliter ? ")
+    (printout t crlf "Is your triglyceride (body fat) at normal level (< 150mg/dL) or borderline high (150-199mg/dL) or high to very high (>200mg/dL) (n/b/h)? ")
     (bind ?response (read))
-    (if (numberp ?response) then
-      (if (>= (float ?response) 200) then
-        (assert (factor-tg high))
-        (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.15))))
-          else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.15))))
-        )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.15))))
-      )
-      (if (and (>= (float ?response) 150) (<= (float ?response) 199)) then
+    (switch ?response
+      (case n then (assert (factor-tg normal)))
+      (case b then
         (assert (factor-tg borderline))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.1))))
@@ -387,9 +379,18 @@
         )
         (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.1))))
       )
-      (if (< (float ?response) 150) then (assert (factor-tg normal)))
-      else (assert (factor-tg not-available))
+      (case h then
+        (assert (factor-tg high))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.15))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.15))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.15))))
+      )
+      (default (assert (factor-tg not-available)))
     )
+
 )
 
 (defrule collect-gestational-history
@@ -478,11 +479,257 @@
     )
 )
 
-
-
 ;;;******************************************************************************************
 ;;;* QUERY SYMPTOMS *
 ;;;******************************************************************************************
+
+(defrule collect-headache
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you have headache (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.02))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.02))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.02))))
+      )
+    )
+)
+
+(defrule collect-blur
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you experience any blur of vision (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.02))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.02))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.02))))
+      )
+    )
+)
+
+(defrule collect-excessive-urination
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you have excessive urination (the need to urinate more than you normally would, might occur along with bladder discomfort) (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+      )
+    )
+)
+
+(defrule collect-polydipsia
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you have polydipsia (excessive thirst) (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+      )
+    )
+)
+
+(defrule collect-lost-consciousness
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you experience losing consciousness (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.02))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.02))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.02))))
+      )
+    )
+)
+
+(defrule collect-nausea
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you have symptom of nausea and vomitting (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.02))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.02))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.02))))
+      )
+    )
+)
+
+(defrule collect-polyphagia
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you experience polyphagia or hyperphagia (excessive hunger or abnormally consumption of large quantities of food) (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+      )
+    )
+)
+
+(defrule collect-tiredness
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you experience tiredness (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+      )
+    )
+)
+
+(defrule collect-lose-weight
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Are you losing weight without reason (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+      )
+    )
+)
+
+(defrule collect-fraction
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you have any fraction and skin tag (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.01))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.01))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.01))))
+      )
+    )
+)
+
+(defrule collect-infection
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you have frequent infections (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+      )
+    )
+)
+
+(defrule collect-loss-sensation
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you have experience loss of sensation in hands and feet (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.01))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.01))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.01))))
+      )
+    )
+)
+
+(defrule collect-cold-sweat
+    (current_fact (fact diabetes-type-I) (cf ?cf-diabetes-I))
+    (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
+    (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
+    =>
+    (printout t crlf "Do you have experience cold sweat (sudden sweating not due to exertion or heat) (yes/no)? ")
+    (bind ?response (read))
+    (switch ?response
+  		(case yes then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.01))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.01))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.01))))
+      )
+    )
+)
+
 
 
 ;;;******************************************************************************************
@@ -498,17 +745,23 @@
 	(current_goal (goal gestational-diabetes) (cf ?cf-gestational))
   (current_goal (goal more-consideration) (cf ?cf-consideration))
 =>
-  (assert (result
-        (healthy ?cf-healthy) (at-risk ?cf-risk) (diabetes-type-I ?cf-diabetes-I)
-        (diabetes-type-II ?cf-diabetes-II) (gestational-diabetes ?cf-gestational)
-        (more-consideration ?cf-consideration)
-      )
+  (if (= ?*pregnant* 0) then
+      (printout t crlf "Diabetes Diagnosis result :")
+      (printout t crlf)
+      ;(printout t crlf "Healthy: " (float (* ?cf-healthy 100)) "%")
+      ;(printout t crlf "At Risk   : " (float (* ?cf-risk 100)) "%")
+      (printout t crlf "Diabetes I   : " (float (* ?cf-diabetes-I 100)) "%")
+      (printout t crlf "Diabetes II    : " (float (* ?cf-diabetes-II 100)) "%")
+      (printout t crlf "Gestational diabetes    : 0%" crlf)
+      ;(printout t crlf "Further medial consulation    : " (float (* ?cf-consideration 100)) "%" crlf)
+    else
+      (printout t crlf "Diabetes Diagnosis result :")
+      (printout t crlf)
+    	;(printout t crlf "Healthy: " (float (* ?cf-healthy 100)) "%")
+    	;(printout t crlf "At Risk   : " (float (* ?cf-risk 100)) "%")
+    	(printout t crlf "Diabetes I   : " (float (* ?cf-diabetes-I 100)) "%")
+    	(printout t crlf "Diabetes II    : " (float (* ?cf-diabetes-II 100)) "%")
+      (printout t crlf "Gestational diabetes    : " (float (* ?cf-gestational 100)) "%" crlf)
+    	;(printout t crlf "Further medial consulation    : " (float (* ?cf-consideration 100)) "%" crlf)
   )
-	(printout t crlf "Diabetes Diagnosis result :")
-	(printout t crlf "Healthy: " (float (* ?cf-healthy 100)) "%")
-	(printout t crlf "At Risk   : " (float (* ?cf-risk 100)) "%")
-	(printout t crlf "Diabetes I   : " (float (* ?cf-diabetes-I 100)) "%")
-	(printout t crlf "Diabetes II    : " (float (* ?cf-diabetes-II 100)) "%")
-  (printout t crlf "Gestational diabetes    : " (float (* ?cf-gestational 100)) "%")
-	(printout t crlf "Further medial consulation    : " (float (* ?cf-consideration 100)) "%" crlf)
 )
