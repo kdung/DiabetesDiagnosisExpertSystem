@@ -116,7 +116,6 @@
 (defrule collect-info-gender
   (declare (salience 10))
   (not (info-gender ?))
-  (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
   =>
   (printout t crlf "What is your gender (Male(M)/Female(F))? ")
   (bind ?response (read))
@@ -129,7 +128,6 @@
   )
 
 (defrule collect-info-pregnant
-  (declare (salience 10))
   (info-gender female)
   (not (info-pregnant ?))
   (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
@@ -139,12 +137,13 @@
 
   (switch ?response
 		(case yes then
-				(assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.3))))
+				(assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.2))))
         (assert (info-pregnant yes))
         (bind ?*pregnant* 1)
     )
 		(case no then
         (assert (info-pregnant no))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.2))))
         (bind ?*pregnant* 0)
     )
     (default (assert (info-pregnant no)))
@@ -163,12 +162,12 @@
   (if (and (>= ?response 20) (< ?response 40))
       then
       (assert (info-age yes))
-      (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.004))))
+      ;(assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.2))))
   )
   (if (>= ?response 40)
       then
       (assert (info-age yes))
-      (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.01))))
+      ;(assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.2))))
       else
       (assert (info-age no))
   )
@@ -190,10 +189,10 @@
           (if (> (float ?response) 7.7)
             then
             (assert (test-ogtt unhealthy))
-            (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.9))))
+            (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 1.0))))
             else
             (assert (test-ogtt healthy))
-            (assert (working_goal (goal gestational-diabetes) (cf (* ?cf-gestational 0.0))))
+            (assert (working_goal (goal gestational-diabetes) (cf (* ?cf-gestational -1.0))))
           )
         else (assert (test-ogtt not-available))
         (printout t crlf "not a")
@@ -211,14 +210,20 @@
     (if (numberp ?response)
         then
           (if (< (float ?response) 11.1)
-            then (assert (test-ogtt healthy))
+            then
+              (assert (test-ogtt healthy))
+              (if (< ?*age* 20) then
+                (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.8))))
+                else
+                (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.8))))
+              )
             else
-            (assert (test-ogtt unhealthy))
-            (if (< ?*age* 20) then
-              (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.7))))
-              else
-              (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.7))))
-            )
+              (assert (test-ogtt unhealthy))
+              (if (< ?*age* 20) then
+                (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.8))))
+                else
+                (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.8))))
+              )
           )
         else (assert (test-ogtt not-available))
     )
@@ -237,20 +242,27 @@
           (if (> (float ?response) 7.0) then
             (assert (test-fpg unhealthy))
             (if (< ?*age* 20) then
-              (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.7))))
+              (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.8))))
               else
-              (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.7))))
+              (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.8))))
             )
           )
           (if (and (>= (float ?response) 6.1) (<= (float ?response) 6.9)) then
             (assert (test-fpg at-risk))
             (if (< ?*age* 20) then
-              (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.25))))
+              (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.2))))
               else
-              (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.25))))
+              (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.2))))
             )
           )
-          (if (< (float ?response) 6.1) then (assert (test-fpg healthy)))
+          (if (< (float ?response) 6.1) then
+            (assert (test-fpg healthy))
+            (if (< ?*age* 20) then
+              (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.8))))
+              else
+              (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.8))))
+            )
+          )
         else (assert (test-fpg not-available))
     )
 )
@@ -266,13 +278,19 @@
     (if (numberp ?response)
         then
           (if (< (float ?response) 11.1)
-            then (assert (test-cpg healthy))
+            then
+              (assert (test-cpg healthy))
+              (if (< ?*age* 20) then
+                (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.8))))
+                else
+                (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.8))))
+              )
             else
             (assert (test-cpg unhealthy))
             (if (< ?*age* 20) then
-              (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
+              (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.8))))
               else
-              (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.4))))
+              (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.8))))
             )
           )
         else (assert (test-cpg not-available))
@@ -294,22 +312,30 @@
       (if (>= (float ?response) 30) then
         (assert (factor-obesity obesity))
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.2))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.6))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.2))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.6))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.2))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.6))))
       )
       (if (and (>= (float ?response) 25) (<= (float ?response) 29.9)) then
         (assert (factor-obesity overweight))
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.1))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.5))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.1))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.5))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.1))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.5))))
       )
-      (if (< (float ?response) 25) then (assert (factor-obesity normal)))
+      (if (< (float ?response) 25) then
+        (assert (factor-obesity normal))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.6))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.6))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.6))))
+      )
       else (assert (factor-obesity not-available))
     )
 )
@@ -326,13 +352,21 @@
   		(case yes then
         (assert (factor-bp high))
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.2))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.2))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.2))))
       )
-      (case no then (assert (factor-bp normal)))
+      (case no then
+        (assert (factor-bp normal))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.2))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.2))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.2))))
+      )
       (default (assert (factor-bp not-available)))
     )
 )
@@ -349,13 +383,21 @@
   		(case yes then
         (assert (factor-history yes))
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.2))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.2))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.2))))
       )
-      (case no then (assert (factor-history no)))
+      (case no then
+        (assert (factor-history no))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.2))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.2))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.2))))
+      )
       (default (assert (factor-history not-available)))
     )
 )
@@ -369,24 +411,32 @@
     (printout t crlf "Is your triglyceride (body fat) at normal level (< 150mg/dL) or borderline high (150-199mg/dL) or high to very high (>200mg/dL) (n/b/h)? ")
     (bind ?response (read))
     (switch ?response
-      (case n then (assert (factor-tg normal)))
+      (case n then
+        (assert (factor-tg normal))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.4))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.4))))
+      )
       (case b then
         (assert (factor-tg borderline))
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.1))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.1))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.4))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.1))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.4))))
       )
       (case h then
         (assert (factor-tg high))
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.15))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.5))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.15))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.5))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.15))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.5))))
       )
       (default (assert (factor-tg not-available)))
     )
@@ -406,13 +456,21 @@
   		(case yes then
         (assert (factor-gestational-history yes))
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.15))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.6))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.15))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.6))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.2))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.6))))
       )
-      (case no then (assert (factor-gestational-history no)))
+      (case no then
+        (assert (factor-gestational-history no))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.6))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.6))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.6))))
+      )
       (default (assert (factor-gestational-history not-available)))
     )
 )
@@ -429,13 +487,21 @@
   		(case no then
         (assert (factor-activity yes))
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.02))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.02))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.4))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.02))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.4))))
       )
-      (case yes then (assert (factor-activity no)))
+      (case yes then
+        (assert (factor-activity no))
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.4))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.4))))
+      )
       (default (assert (factor-activity not-available)))
     )
 )
@@ -450,11 +516,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.02))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.02))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.4))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.02))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.4))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.4))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.4))))
       )
     )
 )
@@ -470,11 +544,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.02))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.02))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.4))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.02))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.4))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.4))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.4))))
       )
     )
 )
@@ -493,11 +575,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.02))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.2))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.02))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.2))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.02))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.2))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.2))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.2))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.2))))
       )
     )
 )
@@ -512,11 +602,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.02))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.2))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.02))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.2))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.02))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.2))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.2))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.2))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.2))))
       )
     )
 )
@@ -531,11 +629,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.4))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.4))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.4))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.4))))
       )
     )
 )
@@ -550,11 +656,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.4))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.4))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.4))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.4))))
       )
     )
 )
@@ -569,11 +683,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.02))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.2))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.02))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.2))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.02))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.2))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.2))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.2))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.2))))
       )
     )
 )
@@ -588,11 +710,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.02))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.2))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.02))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.2))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.02))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.2))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.2))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.2))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.2))))
       )
     )
 )
@@ -607,11 +737,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.4))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.4))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.4))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.4))))
       )
     )
 )
@@ -626,11 +764,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.4))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.4))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.4))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.4))))
       )
     )
 )
@@ -645,11 +791,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.4))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.4))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.4))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.4))))
       )
     )
 )
@@ -664,11 +818,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.01))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.2))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.01))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.2))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.01))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.2))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.2))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.2))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.2))))
       )
     )
 )
@@ -683,11 +845,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.05))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.05))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.4))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.05))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.4))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.4))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.4))))
       )
     )
 )
@@ -702,11 +872,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.01))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.2))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.01))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.2))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.01))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.2))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.2))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.2))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.2))))
       )
     )
 )
@@ -721,11 +899,19 @@
     (switch ?response
   		(case yes then
         (if (< ?*age* 20) then
-          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.01))))
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.2))))
           else
-          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.01))))
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II 0.2))))
         )
-        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.01))))
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.2))))
+      )
+      (case no then
+        (if (< ?*age* 20) then
+          (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.2))))
+          else
+          (assert (working_goal (goal diabetes-type-II) (cf (+ ?cf-diabetes-II -0.2))))
+        )
+        (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.2))))
       )
     )
 )
@@ -752,7 +938,7 @@
       ;(printout t crlf "At Risk   : " (float (* ?cf-risk 100)) "%")
       (printout t crlf "Diabetes I   : " (float (* ?cf-diabetes-I 100)) "%")
       (printout t crlf "Diabetes II    : " (float (* ?cf-diabetes-II 100)) "%")
-      (printout t crlf "Gestational diabetes    : 0%" crlf)
+      (printout t crlf "Gestational diabetes    : 0.0%" crlf)
       ;(printout t crlf "Further medial consulation    : " (float (* ?cf-consideration 100)) "%" crlf)
     else
       (printout t crlf "Diabetes Diagnosis result :")
