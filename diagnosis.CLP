@@ -1030,10 +1030,29 @@
 (defrule compile_recommendation-consideration-3
   (declare (salience -9))
   (current_fact (fact more-consideration) (cf ?cf-more-consideration))
-  (or (result-test consideration) (not (result-test ?)))
+  (result-test consideration)
   =>
   (printout t crlf "consideration 3 :")
   (assert (working_goal (goal more-consideration) (cf (+ ?cf-more-consideration 1.0))))
+)
+
+(defrule compile_recommendation-consideration-4
+  (declare (salience -9))
+  (current_fact (fact more-consideration) (cf ?cf-more-consideration))
+  (not (result-test ?))
+  (or (result-symtom diabetes) (result-factor at-risk))
+  =>
+  (printout t crlf "consideration 4 :")
+  (assert (working_goal (goal more-consideration) (cf (+ ?cf-more-consideration 1.0))))
+)
+
+(defrule compile_recommendation-information-unavailable
+  (declare (salience -9))
+  (not (result-test ?))
+  (not (result-symtom ?))
+  (not (result-factor ?))
+  =>
+  (printout t crlf "not enough information :")
 )
 
 (defrule compile_recommendation-healthy
