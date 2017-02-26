@@ -1011,6 +1011,7 @@
   (current_fact (fact more-consideration) (cf ?cf-more-consideration))
   (result-test healthy)
   (result-symtom diabetes)
+  (not (result-factor ?))
   =>
   (printout t crlf "consideration 1 :")
   (assert (working_goal (goal more-consideration) (cf (+ ?cf-more-consideration 1.0))))
