@@ -333,6 +333,12 @@
      (and (test-fpg unhealthy) (test-ogtt healthy) (test-cpg healthy))
      (and (test-fpg healthy) (test-ogtt unhealthy) (test-cpg healthy))
      (and (test-fpg healthy) (test-ogtt healthy) (test-cpg unhealthy))
+     (and (test-fpg unhealthy) (test-ogtt not-available) (test-cpg not-available))
+     (and (test-fpg not-available) (test-ogtt not-available) (test-cpg unhealthy))
+     (and (test-fpg not-available) (test-ogtt unhealthy) (test-cpg not-available))
+     (and (test-fpg healthy) (test-ogtt not-available) (test-cpg not-available))
+     (and (test-fpg not-available) (test-ogtt not-available) (test-cpg healthy))
+     (and (test-fpg not-available) (test-ogtt healthy) (test-cpg not-available))
   )
   =>
   (printout t crlf "test consideration :")
@@ -350,6 +356,30 @@
   (assert (result-test healthy))
 )
 
+(defrule assert-test-non-pregnant-healthy-alternative
+  (declare (salience -8))
+  (info-pregnant no)
+  (or
+     (and (test-fpg healthy) (test-ogtt healthy) (test-cpg not-available))
+     (and (test-fpg healthy) (test-ogtt not-available) (test-cpg healthy))
+     (and (test-fpg not-available) (test-ogtt healthy) (test-cpg healthy))
+  )
+  =>
+  (printout t crlf "at least 2 test healthy, 1 test not available")
+  (assert (result-test healthy))
+)
+
+(defrule assert-test-collected
+  (declare (salience -8))
+  (or
+    (test-fpg ?)
+    (test-ogtt ?)
+    (test-cpg ?)
+  )
+  =>
+  (assert (at-least-one-test yes))
+)
+
 ;;;******************************************************************************************
 ;;;* QUERY RISK FACTORS *
 ;;;******************************************************************************************
@@ -362,6 +392,7 @@
     (printout t crlf "How much is your Body Mass Index (BMI) ? ")
     (bind ?response (read))
     (if (numberp ?response) then
+      (assert (at-least-one-factor yes))
       (if (>= (float ?response) 30) then
         (assert (factor-obesity obesity))
         (if (< ?*age* 20) then
@@ -468,6 +499,7 @@
     (bind ?response (read))
     (switch ?response
       (case n then
+        (assert (at-least-one-factor yes))
         (assert (factor-tg normal))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
@@ -477,6 +509,7 @@
         (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational -0.4))))
       )
       (case b then
+        (assert (at-least-one-factor yes))
         (assert (factor-tg borderline))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
@@ -486,6 +519,7 @@
         (assert (working_goal (goal gestational-diabetes) (cf (+ ?cf-gestational 0.4))))
       )
       (case h then
+        (assert (at-least-one-factor yes))
         (assert (factor-tg high))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.5))))
@@ -511,6 +545,7 @@
     (bind ?response (read))
     (switch ?response
   		(case yes then
+        (assert (at-least-one-factor yes))
         (assert (factor-gestational-history yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.6))))
@@ -521,6 +556,7 @@
         (assert (result-factor at-risk))
       )
       (case no then
+        (assert (at-least-one-factor yes))
         (assert (factor-gestational-history no))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.6))))
@@ -575,6 +611,7 @@
     (bind ?response (read))
     (switch ?response
   		(case yes then
+        (assert (at-least-one-factor yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
@@ -584,6 +621,7 @@
         (assert (result-factor at-risk))
       )
       (case no then
+        (assert (at-least-one-factor yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
           else
@@ -604,6 +642,7 @@
     (bind ?response (read))
     (switch ?response
   		(case yes then
+        (assert (at-least-one-factor yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
@@ -613,6 +652,7 @@
         (assert (result-factor at-risk))
       )
       (case no then
+        (assert (at-least-one-factor yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
           else
@@ -692,6 +732,7 @@
     (bind ?response (read))
     (switch ?response
   		(case yes then
+        (assert (at-least-one-symptom yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
@@ -701,6 +742,7 @@
         (assert (result-symtom diabetes))
       )
       (case no then
+        (assert (at-least-one-symptom yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
           else
@@ -720,6 +762,7 @@
     (bind ?response (read))
     (switch ?response
   		(case yes then
+        (assert (at-least-one-symptom yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
@@ -729,6 +772,7 @@
         (assert (result-symtom diabetes))
       )
       (case no then
+        (assert (at-least-one-symptom yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
           else
@@ -804,6 +848,7 @@
     (bind ?response (read))
     (switch ?response
   		(case yes then
+        (assert (at-least-one-symptom yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
@@ -813,6 +858,7 @@
         (assert (result-symtom diabetes))
       )
       (case no then
+        (assert (at-least-one-symptom yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
           else
@@ -860,6 +906,7 @@
     (bind ?response (read))
     (switch ?response
   		(case yes then
+        (assert (at-least-one-symptom yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
@@ -869,6 +916,7 @@
         (assert (result-symtom diabetes))
       )
       (case no then
+        (assert (at-least-one-symptom yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
           else
@@ -916,6 +964,7 @@
     (bind ?response (read))
     (switch ?response
   		(case yes then
+        (assert (at-least-one-symptom yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I 0.4))))
           else
@@ -925,6 +974,7 @@
         (assert (result-symtom diabetes))
       )
       (case no then
+        (assert (at-least-one-symptom yes))
         (if (< ?*age* 20) then
           (assert (working_goal (goal diabetes-type-I) (cf (+ ?cf-diabetes-I -0.4))))
           else
@@ -1048,9 +1098,9 @@
 
 (defrule compile_recommendation-information-unavailable
   (declare (salience -9))
-  (not (result-test ?))
-  (not (result-symtom ?))
-  (not (result-factor ?))
+  (not (at-least-one-test yes))
+  (not (at-least-one-factor yes))
+  (not (at-least-one-symptom yes))
   =>
   (printout t crlf "not enough information :")
 )
