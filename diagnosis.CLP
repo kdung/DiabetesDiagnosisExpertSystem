@@ -1,3 +1,14 @@
+;;;******************************************************************************************
+;;; Diabetes Diagnosis Expert System
+;;;
+;;; This program is written by Liu Kanglong, Kim Dung Bui, Meng Yang, Lwi Tiong Chai,
+;;; Dipti Bijpuria, Tan Xinli Steven, 2016, NUS (Copyright).
+;;;
+;;; This is a knowledge-based recommender system to help diagnose diabetes for users.
+;;; Github: https://github.com/kdung/DiabetesDiagnosisExpertSystem
+;;;******************************************************************************************
+
+
 (deftemplate current_fact (slot fact) (slot cf))
 (deftemplate current_goal (slot goal) (slot cf)) ;; the top-level
 (deftemplate working_goal (slot goal) (slot cf)) ;;
@@ -10,9 +21,9 @@
   (slot gestational-diabetes)
   (slot more-consideration))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; load current diagnosis fact ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;******************************************************************************************
+;;; load current diagnosis fact
+;;;******************************************************************************************
 (deffacts load_facts
   (current_fact (fact healthy) (cf 0.0))
   (current_fact (fact at-risk) (cf 0.0))
@@ -29,9 +40,9 @@
   (current_goal (goal more-consideration) (cf 0.0))
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;******************************************************************************************
 ;;; initialise current goal when a new_goal is asserted
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;******************************************************************************************
 ; (defrule initialise-current-goal
 ;	(working_goal (goal ?ng) (cf ?cfng))
 ;	(not (current_goal (goal ?cg) (cf ?cfg)))
@@ -40,10 +51,10 @@
 ;	(retract ?newg)
 ;)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;******************************************************************************************
 ;;; CF combination for multiple conclusions RULES
 ;;; treat this as a black-box
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;******************************************************************************************
 
 ;combine POSITIVE certainty factors for multiple conclusions
 ;cf(cf1,cf2) = cf1 + cf2 * (1- cf1)
@@ -81,30 +92,6 @@
   (modify ?f1 (cf =(/ (+ ?cf1 ?cf2) (- 1 (min (abs ?cf1) (abs ?cf2))))))
 )
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Question Triggering Rule
-;;; to trigger the next question
-;;; by replacing the current question with next question(working question)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; define question template
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(deftemplate current_question (slot question) (slot desc) (slot option1) (slot option2) (slot option3) (slot option4))
-
-(deftemplate working_question (slot question) (slot desc) (slot option1) (slot option2) (slot option3) (slot option4))
-
-;;; triggering the next question
-(defrule next_question
-	(declare (salience 100))
-	?cq <- (current_question (question ?q1) )
-	?wq <- (working_question (question ?q2) (desc ?desc) (option1 ?option1) (option2 ?option2) (option3 ?option3) (option4 ?option4))
- =>
-	(retract ?wq)
-	(modify ?cq  (question ?q2) (desc ?desc) (option1 ?option1) (option2 ?option2) (option3 ?option3) (option4 ?option4))
-	(printout t "triggering the next question" crlf)
-)
 
 (defglobal ?*age* = 0
     ?*pregnant* = 0)
