@@ -575,7 +575,7 @@
     (current_fact (fact diabetes-type-II) (cf ?cf-diabetes-II))
     (current_fact (fact gestational-diabetes) (cf ?cf-gestational))
     =>
-    (printout t crlf "Do you excercise (do physical activity) at least 3 times per week (yes/no)? ")
+    (printout t crlf "Do you exercise (do physical activity) at least 3 times per week (yes/no)? ")
     (bind ?response (read))
     (switch ?response
   		(case no then
@@ -1132,8 +1132,8 @@
       (printout t crlf "At Risk   : " (float (* ?cf-risk 100)) "%")
       (printout t crlf "Diabetes I   : " (float (* ?cf-diabetes-I 100)) "%")
       (printout t crlf "Diabetes II    : " (float (* ?cf-diabetes-II 100)) "%")
-      (printout t crlf "Gestational diabetes    : 0.0%" crlf)
-      (printout t crlf "Further medial consulation    : " (float (* ?cf-consideration 100)) "%" crlf)
+      (printout t crlf "Gestational diabetes    : 0.0%")
+      (printout t crlf "Further medical consultation    : " (float (* ?cf-consideration 100)) "%" crlf)
     else
       (printout t crlf "Diabetes Diagnosis result :")
       (printout t crlf)
@@ -1141,7 +1141,7 @@
     	(printout t crlf "At Risk   : " (float (* ?cf-risk 100)) "%")
     	(printout t crlf "Diabetes I   : " (float (* ?cf-diabetes-I 100)) "%")
     	(printout t crlf "Diabetes II    : " (float (* ?cf-diabetes-II 100)) "%")
-      (printout t crlf "Gestational diabetes    : " (float (* ?cf-gestational 100)) "%" crlf)
-    	(printout t crlf "Further medial consulation    : " (float (* ?cf-consideration 100)) "%" crlf)
+      (printout t crlf "Gestational diabetes    : " (float (* ?cf-gestational 100)) "%")
+    	(printout t crlf "Further medical consultation    : " (float (* ?cf-consideration 100)) "%" crlf)
   )
 )
